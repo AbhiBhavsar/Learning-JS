@@ -4,13 +4,16 @@ const bodyParser = require("body-parser");
 const path = require("path");
 const rootDir = require("./utils/path");
 
-const adminRoutes = require("./routes/admin");
+app.set("view engine", "pug");
+app.set("views", "./views");
+
+const adminData = require("./routes/admin");
 const shopRoutes = require("./routes/shop");
 
 app.use(express.static(path.join(__dirname, "public")));
 app.use(bodyParser.urlencoded({ extended: false }));
 
-app.use("/admin", adminRoutes); //will route the requst starting with /admin as base route
+app.use("/admin", adminData.routes); //will route the requst starting with /admin as base route
 app.use(shopRoutes);
 
 app.use((req, res, next) => {
