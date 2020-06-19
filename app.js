@@ -18,14 +18,14 @@ const shopRoutes = require("./routes/shop");
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, "public")));
 
-app.use((req, res, next) => {
-	User.findById("5baa2528563f16379fc8a610")
-		.then(user => {
-			req.user = new User(user.name, user.email, user.cart, user._id);
-			next();
-		})
-		.catch(err => console.log(err));
-});
+// app.use((req, res, next) => {
+// 	User.findById("5baa2528563f16379fc8a610")
+// 		.then(user => {
+// 			req.user = new User(user.name, user.email, user.cart, user._id);
+// 			next();
+// 		})
+// 		.catch(err => console.log(err));
+// });
 
 app.use("/admin", adminRoutes);
 app.use(shopRoutes);
@@ -36,8 +36,8 @@ mongoose
 	.connect(
 		"mongodb+srv://node-user:node-user@node-testing-oefoa.mongodb.net/mongoose-db?retryWrites=true&w=majority"
 	)
-	.then(() => {
+	.then(result => {
 		app.listen(3000);
-		console.log("Connected...!");
+		console.log("[FROM APP JS]Connected...!");
 	})
-	.catch(err => console.log(err));
+	.catch(err => console.log("[FROM APP JS]", err));
