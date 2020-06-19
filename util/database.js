@@ -9,6 +9,7 @@ const mongoConnect = callback => {
 		.then(client => {
 			console.log(`Connected...!`);
 			_db = client.db(); //we can pass a database name to connect to as db's parameter
+			callback();
 		})
 		.catch(err => {
 			console.log(err);
