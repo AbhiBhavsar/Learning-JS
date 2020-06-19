@@ -17,7 +17,8 @@ exports.postAddProduct = (req, res, next) => {
 		title: title,
 		price: price,
 		description: description,
-		imageUrl: imageUrl
+		imageUrl: imageUrl,
+		userId: req.user
 	});
 	product
 		.save()
@@ -77,6 +78,8 @@ exports.postEditProduct = (req, res, next) => {
 
 exports.getProducts = (req, res, next) => {
 	Product.find()
+		// .select("title price -_id") it'll get the coloums from table and - will exclude it
+		// .populate("userId", "name") it'll add data on key  of the related model
 		.then(products => {
 			res.render("admin/products", {
 				prods: products,
