@@ -1,46 +1,91 @@
-const bcrypt = require("bcryptjs");
-// const nodemailer = require("nodemailer");
-// const sendgridTransport = require("nodemailer-sendgrid-transport");
-const sgMail = require("@sendgrid/mail");
-sgMail.setApiKey(
-	"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"
-);
-const User = require("../models/user");
-
-// const transporter = nodemailer.createTransport(
-// 	sendgridTransport({
-// 		auth: {
-// 			api_key:
-// 				"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"
-// 		}
-// 	})
-// );
-
 const crypto = require("crypto");
 
+const bcrypt = require("bcryptjs");
+const nodemailer = require("nodemailer");
+const sendgridTransport = require("nodemailer-sendgrid-transport");
+const { validationResult } = require("express-validator/check");
+
+const User = require("../models/user");
+
+const transporter = nodemailer.createTransport(
+	sendgridTransport({
+		auth: {
+			api_key:
+				"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"
+		}
+	})
+);
+
 exports.getLogin = (req, res, next) => {
+	let message = req.flash("error");
+	if (message.length > 0) {
+		message = message[0];
+	} else {
+		message = null;
+	}
 	res.render("auth/login", {
 		path: "/login",
 		pageTitle: "Login",
-		errorMessage: req.flash("error")
+		errorMessage: message,
+		oldInput: {
+			email: "",
+			password: ""
+		},
+		validationErrors: []
 	});
 };
 
 exports.getSignup = (req, res, next) => {
+	let message = req.flash("error");
+	if (message.length > 0) {
+		message = message[0];
+	} else {
+		message = null;
+	}
 	res.render("auth/signup", {
 		path: "/signup",
-		pageTitle: "Signup"
+		pageTitle: "Signup",
+		errorMessage: message,
+		oldInput: {
+			email: "",
+			password: "",
+			confirmPassword: ""
+		},
+		validationErrors: []
 	});
 };
 
 exports.postLogin = (req, res, next) => {
 	const email = req.body.email;
 	const password = req.body.password;
+
+	const errors = validationResult(req);
+	if (!errors.isEmpty()) {
+		return res.status(422).render("auth/login", {
+			path: "/login",
+			pageTitle: "Login",
+			errorMessage: errors.array()[0].msg,
+			oldInput: {
+				email: email,
+				password: password
+			},
+			validationErrors: errors.array()
+		});
+	}
+
 	User.findOne({ email: email })
 		.then(user => {
 			if (!user) {
-				req.flash("error", "Invalid email or password.");
-				return res.redirect("/login");
+				return res.status(422).render("auth/login", {
+					path: "/login",
+					pageTitle: "Login",
+					errorMessage: "Invalid email or password.",
+					oldInput: {
+						email: email,
+						password: password
+					},
+					validationErrors: []
+				});
 			}
 			bcrypt
 				.compare(password, user.password)
@@ -53,7 +98,16 @@ exports.postLogin = (req, res, next) => {
 							res.redirect("/");
 						});
 					}
-					res.redirect("/login");
+					return res.status(422).render("auth/login", {
+						path: "/login",
+						pageTitle: "Login",
+						errorMessage: "Invalid email or password.",
+						oldInput: {
+							email: email,
+							password: password
+						},
+						validationErrors: []
+					});
 				})
 				.catch(err => {
 					console.log(err);
@@ -66,43 +120,41 @@ exports.postLogin = (req, res, next) => {
 exports.postSignup = (req, res, next) => {
 	const email = req.body.email;
 	const password = req.body.password;
-	const confirmPassword = req.body.confirmPassword;
-	User.findOne({ email: email })
-		.then(userDoc => {
-			if (userDoc) {
-				return res.redirect("/signup");
-			}
-			return bcrypt
-				.hash(password, 12)
-				.then(hashedPassword => {
-					const user = new User({
-						email: email,
-						password: hashedPassword,
-						cart: { items: [] }
-					});
-					return user.save();
-				})
-				.then(result => {
-					res.redirect("/login");
-					console.log("sent");
-					// return transporter
-					// 	.sendMail({
-					// 		to: email,
-					// 		from: "ab@learingnode.com",
-					// 		subject: "Signed successfully",
-					// 		html: `<h1>User with ${email} has signed up successfully</h1>`,
-					// 		replyTo: "abscrap20@gmail.com"
-					// 	})
-					// 	.catch(err => console.log(err));
-					const msg = {
-						to: email,
-						from: "abscrap20@gmail.com",
-						subject: "Sending with Twilio SendGrid is Fun",
-						text: "and easy to do anywhere, even with Node.js",
-						html: "<strong>and easy to do anywhere, even with Node.js</strong>"
-					};
-					sgMail.send(msg).catch(err => console.log(err));
-				});
+
+	const errors = validationResult(req);
+	if (!errors.isEmpty()) {
+		console.log(errors.array());
+		return res.status(422).render("auth/signup", {
+			path: "/signup",
+			pageTitle: "Signup",
+			errorMessage: errors.array()[0].msg,
+			oldInput: {
+				email: email,
+				password: password,
+				confirmPassword: req.body.confirmPassword
+			},
+			validationErrors: errors.array()
+		});
+	}
+
+	bcrypt
+		.hash(password, 12)
+		.then(hashedPassword => {
+			const user = new User({
+				email: email,
+				password: hashedPassword,
+				cart: { items: [] }
+			});
+			return user.save();
+		})
+		.then(result => {
+			res.redirect("/login");
+			// return transporter.sendMail({
+			//   to: email,
+			//   from: 'shop@node-complete.com',
+			//   subject: 'Signup succeeded!',
+			//   html: '<h1>You successfully signed up!</h1>'
+			// });
 		})
 		.catch(err => {
 			console.log(err);
@@ -117,10 +169,16 @@ exports.postLogout = (req, res, next) => {
 };
 
 exports.getReset = (req, res, next) => {
+	let message = req.flash("error");
+	if (message.length > 0) {
+		message = message[0];
+	} else {
+		message = null;
+	}
 	res.render("auth/reset", {
 		path: "/reset",
 		pageTitle: "Reset Password",
-		errorMessage: req.flash("error")
+		errorMessage: message
 	});
 };
 
@@ -134,47 +192,60 @@ exports.postReset = (req, res, next) => {
 		User.findOne({ email: req.body.email })
 			.then(user => {
 				if (!user) {
-					req.flash("error", "User Noth Found");
+					req.flash("error", "No account with that email found.");
 					return res.redirect("/reset");
 				}
 				user.resetToken = token;
-				user.resetTokenExpiration = Date.now() + 360000;
+				user.resetTokenExpiration = Date.now() + 3600000;
 				return user.save();
 			})
 			.then(result => {
-				res.redirect("/login");
-				const msg = {
+				res.redirect("/");
+				transporter.sendMail({
 					to: req.body.email,
-					from: "abscrap20@gmail.com",
-					subject: "Password Reset Request",
-					html: `<p>You requested the password request</p><p>click this <a href="http://localhost:3000/reset/${token}">link</a> to set the new password</p>`
-				};
-				sgMail.send(msg).catch(err => console.log(err));
+					from: "shop@node-complete.com",
+					subject: "Password reset",
+					html: `
+            <p>You requested a password reset</p>
+            <p>Click this <a href="http://localhost:3000/reset/${token}">link</a> to set a new password.</p>
+          `
+				});
 			})
-			.catch(err => console.log(err));
+			.catch(err => {
+				console.log(err);
+			});
 	});
 };
 
 exports.getNewPassword = (req, res, next) => {
 	const token = req.params.token;
-	User.findOne({
-		resetToken: token,
-		resetTokenExpiration: { $gt: Date.now() }
-	})
+	User.findOne({ resetToken: token, resetTokenExpiration: { $gt: Date.now() } })
 		.then(user => {
+			let message = req.flash("error");
+			if (message.length > 0) {
+				message = message[0];
+			} else {
+				message = null;
+			}
 			res.render("auth/new-password", {
 				path: "/new-password",
-				pageTitle: "Update Password",
+				pageTitle: "New Password",
+				errorMessage: message,
 				userId: user._id.toString(),
-				errorMessage: "Error in new password page"
+				passwordToken: token
 			});
 		})
-		.catch(err => console.log(err));
+		.catch(err => {
+			console.log(err);
+		});
 };
 
 exports.postNewPassword = (req, res, next) => {
-	const { userId, passwordToken, newPassword } = req.body;
+	const newPassword = req.body.password;
+	const userId = req.body.userId;
+	const passwordToken = req.body.passwordToken;
 	let resetUser;
+
 	User.findOne({
 		resetToken: passwordToken,
 		resetTokenExpiration: { $gt: Date.now() },
@@ -193,5 +264,7 @@ exports.postNewPassword = (req, res, next) => {
 		.then(result => {
 			res.redirect("/login");
 		})
-		.catch(err => console.log(err));
+		.catch(err => {
+			console.log(err);
+		});
 };
