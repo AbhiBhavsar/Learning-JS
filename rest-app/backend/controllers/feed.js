@@ -1,4 +1,4 @@
-const { validationResults } = require("express-validator");
+const { validationResult } = require("express-validator");
 exports.getPosts = (req, res, next) => {
 	res.status(200).json({
 		posts: [
@@ -17,7 +17,7 @@ exports.getPosts = (req, res, next) => {
 };
 
 exports.createPost = (req, res, next) => {
-	const errors = validationResults(req);
+	const errors = validationResult(req);
 	if (!errors.isEmpty()) {
 		return res.status(422).json({
 			messsage: "Validation failed!",
