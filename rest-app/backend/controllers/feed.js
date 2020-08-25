@@ -9,7 +9,7 @@ exports.getPosts = (req, res, next) => {
 				error.statusCode = 404;
 				throw error;
 			}
-			res.status(200).json({ message: "Posts fetched", post: posts });
+			res.status(200).json({ message: "Posts fetched", posts: posts });
 		})
 		.catch((err) => {
 			if (!err.statusCode) {

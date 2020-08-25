@@ -8,6 +8,7 @@ import Paginator from "../../components/Paginator/Paginator";
 import Loader from "../../components/Loader/Loader";
 import ErrorHandler from "../../components/ErrorHandler/ErrorHandler";
 import "./Feed.css";
+import { json } from "body-parser";
 
 class Feed extends Component {
 	state = {
@@ -114,9 +115,7 @@ class Feed extends Component {
 
 		fetch(url, {
 			method: method,
-			headers: {
-				"Content-Type": "application/json",
-			},
+			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
 				title: postData.title,
 				content: postData.content,
