@@ -59,7 +59,7 @@ app.use((error, req, res, next) => {
 
 mongoose
 	.connect(
-		"mongodb+srv://node-user:node-user@node-testing-oefoa.mongodb.net/rest-app-db?retryWrites=true&w=majority"
+		"mongodb+srv://node-user:node-user@node-testing.oefoa.mongodb.net/rest-app-db?retryWrites=true&w=majority"
 	)
 	.then((result) => {
 		console.log("Connected!!!");
